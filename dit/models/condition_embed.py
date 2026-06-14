@@ -30,5 +30,29 @@ def sinusoidal_embeddings(t, d_model): #d_model = 384
 
     return torch.cat([torch.sin(args), torch.cos(args)], dim = -1) # (B, d_model = 384) = (B, half = 192) + (B, half = 192)
 
-#class TimeStepEmbedding(nn.Module):
+
+class TimeStepEmbedding(nn.Module):
+    def __init__(self, d_model):
+        super().__init__()
+
+        self.d_model = d_model
+        self.mlp = nn.Sequential(
+            nn.Linear(d_model, d_model * 4),
+            nn.SiLU(),
+            nn.Linear(d_model * 4, d_model)
+        )
+    
+    def forward(self, t):
+        # t shape: (B,)
+        t_emb = self.mlp(sinusoidal_embeddings(t, self.d_model)) # (B, d_model)
+
+
+# classifier free guidance for class labels
+
+# During training, 10% of the time model will not know the class label: replace y with a null token (index 10).
+
+# So in a batch of 128 images, roughly 13 of them will have their class label silently replaced with the null token. The model never knows which ones
+# model just sees index 10 and has to denoise without class information.
+
+# why cfg? The model learns both conditional and unconditional denoising in one training run. 
 
