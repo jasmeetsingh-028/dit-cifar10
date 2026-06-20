@@ -45,6 +45,8 @@ class TimeStepEmbedding(nn.Module):
     def forward(self, t):
         # t shape: (B,)
         t_emb = self.mlp(sinusoidal_embeddings(t, self.d_model)) # (B, d_model)
+        #print(t.shape)
+        return t_emb
 
 
 # classifier free guidance for class labels
@@ -56,3 +58,44 @@ class TimeStepEmbedding(nn.Module):
 
 # why cfg? The model learns both conditional and unconditional denoising in one training run. 
 
+class  ClassEmbedding(nn.Module):
+    def __init__(self, num_classes, d_model, dropout_p = 0.1):
+        super().__init__()
+
+        self.dropout_p = dropout_p
+        # +1 for null class used for classifier-free guidance dropout
+        self.embeddings = nn.Embedding(num_classes + 1, d_model)
+        self.null_token = num_classes #10?
+
+    
+    def forward(self, y, force_dropout = False):
+        if self.training or force_dropout:
+            # ramdomly drop the class label and replace with null token = 10
+            drop_mask = torch.rand(y.shape[0], device = y.device) < self.dropout_p
+            y = torch.where(drop_mask, torch.full_like(y, self.null_token), y)
+            y = self.embeddings(y)
+            #print(y.shape)
+        return y
+    
+
+class ConditionEmbedding(nn.Module):
+    def __init__(self, d_model, num_classes, dropout_p = 0.1):
+        super().__init__()
+        self.t_embed = TimeStepEmbedding(d_model)
+        self.y_embed = ClassEmbedding(num_classes, d_model, dropout_p)
+    
+    def forward(self, t, y):
+        return self.t_embed(t) + self.y_embed(y) # output shape: (B, d_model = 384)
+
+
+if __name__ == "__main__":
+    model = ConditionEmbedding(d_model = 384, num_classes=10)
+    model.train()
+
+    t = torch.randint(0, 1000, (4,)) #shape: (B, )
+    y = torch.randint(0, 10, (4, )) #shape: (B, )
+
+    print(t.shape, y.shape)
+
+    c = model(t, y)
+    print(c.shape)  # expected shape: (B, d_model = 384)
