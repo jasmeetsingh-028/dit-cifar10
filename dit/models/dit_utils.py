@@ -32,8 +32,21 @@ class Attention(nn.Module):
         # Shape: (Batch_size, seq_len, embed_dim)
 
         return self.proj(out)
+
+class FFN(nn.Module):
+    def __init__(self, d_model, mlp_ratio = 4.0):
+        super().__init__()
+        hidden_dim = d_model * mlp_ratio
+        self.fc1 = nn.Linear(d_model, hidden_dim)
+        self.act = nn.GELU(approximate="tanh")
+        self.fc2 = nn.Linear(hidden_dim, d_model)
     
-    
+    def forward(self, x):
+        x = self.act(self.fc1(x))
+        return self.fc2(x)
+
+
+
     
 if __name__ == '__main__':
 
