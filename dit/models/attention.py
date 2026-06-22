@@ -33,4 +33,12 @@ class Attention(nn.Module):
 
         return self.proj(out)
     
+    
+    
+if __name__ == '__main__':
+
+    x = torch.randn(1, 64, 512)
+    attention = Attention(d_model = 512, num_heads=8)
+    out = attention(x)
+    print(out.shape)
 
