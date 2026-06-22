@@ -47,6 +47,15 @@ class FFN(nn.Module):
         return self.fc2(x) #output shape: (B, seq_len, d_model)
 
 
+def modulate(x, gamma, beta):
+    # x shape: (B, seq_len, d_model)
+    # gamma, beta shape: (B, d_model)
+    # gamma/bets.unsqueeze(1) shape: (B, 1, d_model)
+    # unsqueeze: Returns a new tensor with a dimension of size one inserted at the specified position.
+
+    #since gamma is initialized with zeros we need (1 + gamma) : as x*0 = 0
+    return (1 + gamma.unsqueeze(1)) * x + beta.unsqueeze(1)
+
     
 if __name__ == '__main__':
 

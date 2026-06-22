@@ -1,0 +1,26 @@
+What “element-wise affine” means
+
+“Affine” = a transformation of the form:
+
+y=γ⋅x+β
+γ (gamma) → scale
+β (beta) → shift
+
+“Element-wise” means this is applied independently to each feature (dimension).
+
+So for a vector input:
+
+x=[x1,x2,...,xd]
+
+LayerNorm does:
+
+Normalize:
+x_i_hat =  (xi−μ) / σ 
+	​
+
+If affine is enabled:
+
+yi = γi ⋅ x_i_hat + βi
+
+	​
+Each dimension has its own γ and β.
