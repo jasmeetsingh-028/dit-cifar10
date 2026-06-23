@@ -67,8 +67,8 @@ class DIT(nn.Module):
 
         # zero initilaization for final layer
 
-        nn.init.zeros_(self.final_proj.weight)
-        nn.init.zeros_(self.final_proj.bias)
+        nn.init.zeros_(self.final_linear_proj.weight)
+        nn.init.zeros_(self.final_linear_proj.bias)
     
     def unpatchify(self, x):
         # x shape after dit: (B, seq_len/num_patches = 64, 4*4*3 = 48) where patch_Size/patch height and width = 4 and patch channels = 3
@@ -78,7 +78,8 @@ class DIT(nn.Module):
         C =  self.out_channels #3
 
         x = x.reshape(B, H, W, P, P, C) #(B, 8, 8, 4, 4, 3)
-        x = x.permute(B, C, H*P, W*P) #(B, 3, 32, 32)
+        x = x.permute(0, 5, 1, 3, 2, 4) # (B, C = 3, H = 8, P = 4, W = 8, P = 4)
+        x = x.reshape(B, C, H*P, W*P) #(B, 3, 32, 32)
         return x
     
     def forward(self, x, t, y):
@@ -93,7 +94,7 @@ class DIT(nn.Module):
         # c shape: (B, d_model = 384)
 
         for block in self.dit_blocks:
-            x = block(x)
+            x = block(x, c)
 
         #x shape: (B, seq_len/num patches = 64, d_model = 384)
 
@@ -108,5 +109,15 @@ class DIT(nn.Module):
 
         return x
     
-    
+
+if __name__ == "__main__":
+    model = DIT()
+    x = torch.randn(4, 3, 32, 32)
+    t = torch.randint(0, 1000, (4,))
+    y = torch.randint(0, 10, (4,))
+
+    out = model(x, t, y)
+    print(out.shape)   # expect: torch.Size([4, 3, 32, 32])
+    assert out.shape == x.shape
+
     
