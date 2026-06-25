@@ -1,0 +1,56 @@
+import torch
+import torch.nn as nn
+
+
+class NoiseSchedular:
+    def __init__(self, timesteps = 1000, beta_start = 1e-4, beta_end = 0.02, device = 'cuda' if torch.cuda.is_available() else 'cpu'):
+
+        self.timesteps = timesteps
+
+        #varinace schedular
+        betas = torch.linspace(beta_start, beta_end, timesteps, device = device) #shape: (T, )
+
+        #alpha_t = 1 - beta_t
+        alphas = 1.0 - betas #shape: (T, )
+
+        # alpha_bar_t = cummulative product of alphas till timestep 't'
+
+        alpha_bar_t = torch.cumprod(alphas, dim = 0) #shape: (T, )
+
+         # alpha_bar_{t-1}, shifted by one, with 1.0 prepended for t=0
+
+        alpha_bar_t_minus_one = alphas_cumprod_prev = torch.cat([
+            torch.tensor([1.0], device=device), alpha_bar_t[:-1]
+        ])
+
+        self.betas = betas
+        self.alphas = alphas
+        self.alpha_cum_prod = alpha_bar_t
+        self.alpha_cum_prod_prev = alpha_bar_t_minus_one
+
+        #precompute 
+
+        self.sqrt_alphas_cuimprod = torch.sqrt(self.alpha_cum_prod)
+        self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1.0 - self.alpha_cum_prod)
+
+        # Posterior Distribution: # **Posterior Distribution**
+
+        # The posterior distribution q(xt−1∣xt,x0) can be derived from the forward process and is given by a Gaussian distribution with the mean and variance computed:
+
+        #posterior varinace: sigma_i_squared: 
+        self.posterior_variance = (
+            betas * (1.0 - alpha_bar_t_minus_one)  / (1.0 - alpha_bar_t)
+        )
+
+        #posterior mean coefficients: 
+
+        self.posterior_mean_coeff_1 = (
+            betas * torch.sqrt(alpha_bar_t_minus_one) / (1.0 - alpha_bar_t)
+        )
+
+        self.posterior_mean_coeff_2 = (
+            torch.sqrt(alphas) * (1.0 - alpha_bar_t_minus_one) / (1.0 - alpha_bar_t)
+        )
+
+        
+
