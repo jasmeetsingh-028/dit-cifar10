@@ -30,7 +30,7 @@ class NoiseSchedular:
 
         #precompute 
 
-        self.sqrt_alphas_cuimprod = torch.sqrt(self.alpha_cum_prod)
+        self.sqrt_alphas_cumprod = torch.sqrt(self.alpha_cum_prod)
         self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1.0 - self.alpha_cum_prod)
 
         # Posterior Distribution: # **Posterior Distribution**
@@ -52,5 +52,18 @@ class NoiseSchedular:
             torch.sqrt(alphas) * (1.0 - alpha_bar_t_minus_one) / (1.0 - alpha_bar_t)
         )
 
-        
 
+    def _extract(self, arr, t, shape):
+        # arr: precomputer lookup tables shape: (T, ) 
+        # arr[0] is the value for timestep t = 0
+        # t shape: (B, ) 
+        out = arr.to(t.device)[t] #outputs arr[t] #output sqrt_alpha_cumprod[t]
+        return out.reshape(t.shape[0], *([1] * (len(shape) - 1))) 
+    
+    def q_sample(self, x0, t, noise):
+        # closed-form forward process: jump directly to noise level t
+        # x0: (B, C, H, W)   t: (B,)   noise: (B, C, H, W)
+        sqrt_ac = self._extract(self.sqrt_alphas_cumprod, t, x0.shape)
+        sqrt_one_minus_ac = self._extract(self.sqrt_one_minus_alphas_cumprod, t, x0.shape)
+        return sqrt_ac * x0 + sqrt_one_minus_ac * noise
+    
