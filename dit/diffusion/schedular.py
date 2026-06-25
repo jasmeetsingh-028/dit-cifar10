@@ -67,3 +67,12 @@ class NoiseSchedular:
         sqrt_one_minus_ac = self._extract(self.sqrt_one_minus_alphas_cumprod, t, x0.shape)
         return sqrt_ac * x0 + sqrt_one_minus_ac * noise
     
+    def q_posterior_mean(self, x0_hat, xt, t):
+        #xt and x0_hat: shape (B, C, H, W)
+        coef1 = self._extract(self.posterior_mean_coeff_1, t, xt.shape)
+        coef2 = self._extract(self.posterior_mean_coeff_2, t, xt.shape)
+        return coef1 * x0_hat + coef2 * xt
+    
+    def posterior_std(self, t, shape):
+        var = self._extract(self.posterior_variance, t, shape)
+        return torch.sqrt(var)
