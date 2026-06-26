@@ -55,6 +55,7 @@ class NoiseSchedular:
 
 
     def _extract(self, arr, t, shape):
+
         # arr: precomputer lookup tables shape: (T, ) 
         # arr[0] is the value for timestep t = 0
         # t shape: (B, )
@@ -62,6 +63,7 @@ class NoiseSchedular:
         out = arr.to(t.device)[t] #outputs arr[t] #output sqrt_alpha_cumprod[t]
         return out.reshape(t.shape[0], *([1] * (len(shape) - 1))) 
     
+
     def q_sample(self, x0, t, noise):
 
         """
@@ -77,6 +79,20 @@ class NoiseSchedular:
         sqrt_one_minus_ac = self._extract(self.sqrt_one_minus_alphas_cumprod, t, x0.shape)
         return sqrt_ac * x0 + sqrt_one_minus_ac * noise
     
+    def predict_x0_from_epsilon(self, xt, t, eps_pred):
+         
+        """
+        invert q_sample to estimate x0 given xt and predicted noise
+
+                        x₀ = (xₜ - √(1-ᾱₜ) · ε) / √ᾱₜ, here epsilon is eps_pred
+
+        """
+
+        sqrt_ac = self._extract(self.sqrt_alphas_cumprod, t, xt.shape)
+        sqrt_one_minus_ac = self._extract(self.sqrt_one_minus_alphas_cumprod, t, xt.shape)
+        return (xt - sqrt_one_minus_ac * eps_pred) / sqrt_ac
+    
+
     def q_posterior_mean(self, x0_hat, xt, t):
 
         """
@@ -94,6 +110,7 @@ class NoiseSchedular:
         """extract posterior varianace for a batch of time steps 't'"""
         var = self._extract(self.posterior_variance, t, shape)
         return torch.sqrt(var)
+
 
 if __name__ == "__main__":
 
@@ -119,3 +136,11 @@ if __name__ == "__main__":
     xt999 = schedular.q_sample(x0, t999, noise)
     diff_noise = (xt999 - noise).abs().mean().item()
     print(f"mean diff from pure noise at t=999: {diff_noise:.4f}")
+
+    #inversion test: predict_x0_from_eps should recover x0 closely when eps is the true noise
+    x0_recovered = schedular.predict_x0_from_epsilon(xt, t, noise)
+    recon_err = (x0_recovered - x0).abs().mean().item()
+    print(f"x0 reconstruction error: {recon_err:.6f}")
+
+
+
