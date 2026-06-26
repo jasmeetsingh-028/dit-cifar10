@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from dit_utils import Attention, FFN, modulate
+from dit.models.dit_utils import Attention, FFN, modulate
 
 class DITBlock(nn.Module):
     def __init__(self, d_model, num_heads, mlp_ratio):

@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 
-from dit_block import DITBlock
-from patch_embed import Patchify
-from condition_embed import ConditionEmbedding
+from dit.models.dit_block import DITBlock
+from dit.models.patch_embed import Patchify
+from dit.models.condition_embed import ConditionEmbedding
 
 class DIT(nn.Module):
     def __init__(self, img_size = 32,
