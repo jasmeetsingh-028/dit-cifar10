@@ -1,0 +1,34 @@
+Why EMA?
+
+training weights are noisy from batch to batch,
+EMA keeps a smoothed shadow copy that's used for sampling 
+instead of the raw weights.
+
+
+Setup: right after creating MODEL, create a second copy with identical architecture and identical starting weights.
+
+model = DiT()
+ema_model = copy.deepcopy(model)
+
+
+Every training step, after the optimizer updates model's weights, 
+ nudge ema_model's weights slightly toward model's current weights:
+
+
+for ema_param, param in zip(ema_model.parameters(), model.parameters()):
+    ema_param.data = decay * ema_param.data + (1 - decay) * param.data
+
+With decay = 0.9999, each update only moves the EMA weights 0.01%
+of the way toward the current training weights. 
+It takes thousands of steps for the EMA to meaningfully shift: smoothing.
+
+
+It's never part of the forward/backward pass during training 
+it's purely a side computation, updated by this weighted-average
+formula after each optimizer step, not by backprop.
+
+
+One practical detail: EMA should skip the warmup period at
+the very start of training, since the model's weights 
+are essentially random garbage for the first several 
+hundred steps
