@@ -79,7 +79,7 @@ class NoiseSchedular:
         sqrt_one_minus_ac = self._extract(self.sqrt_one_minus_alphas_cumprod, t, x0.shape)
         return sqrt_ac * x0 + sqrt_one_minus_ac * noise
     
-    def predict_x0_from_epsilon(self, xt, t, eps_pred):
+    def predict_x0_from_eps(self, xt, t, eps_pred):
          
         """
         invert q_sample to estimate x0 given xt and predicted noise
@@ -87,6 +87,8 @@ class NoiseSchedular:
                         x₀ = (xₜ - √(1-ᾱₜ) · ε) / √ᾱₜ, here epsilon is eps_pred
 
         """
+
+        # predict_x0_from_epsilon is called only during sampling, right after the model produces eps_pred
 
         sqrt_ac = self._extract(self.sqrt_alphas_cumprod, t, xt.shape)
         sqrt_one_minus_ac = self._extract(self.sqrt_one_minus_alphas_cumprod, t, xt.shape)
@@ -98,7 +100,7 @@ class NoiseSchedular:
         """
         extarct mean for a batch of time steps 't'
 
-                        μₜ = coef1·x̂₀ + coef2·xₜ
+                        μₜ = coef1·x̂₀ + coef2·xₜ   x0_hat is the generated image and 
         """
 
         #xt and x0_hat: shape (B, C, H, W)
@@ -129,6 +131,7 @@ if __name__ == "__main__":
     xt0 = schedular.q_sample(x0, t0, noise)
     diff = (xt0 - x0).abs().mean().item()
     print(f"mean diff at t=0: {diff:.4f}")
+# predict_x0_from_epsilon is called only during sampling, right after the model produces eps_pred
 
     # at t = 999, xt should be close to pure noise
 

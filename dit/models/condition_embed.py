@@ -73,9 +73,8 @@ class  ClassEmbedding(nn.Module):
             # ramdomly drop the class label and replace with null token = 10
             drop_mask = torch.rand(y.shape[0], device = y.device) < self.dropout_p
             y = torch.where(drop_mask, torch.full_like(y, self.null_token), y)
-            y = self.embeddings(y)
             #print(y.shape)
-        return y
+        return self.embeddings(y)
     
 
 class ConditionEmbedding(nn.Module):
