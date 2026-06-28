@@ -32,3 +32,9 @@ One practical detail: EMA should skip the warmup period at
 the very start of training, since the model's weights 
 are essentially random garbage for the first several 
 hundred steps
+
+
+take home lesson: for first few (n steps) steps it keep the 
+copy of model steps as weights updates are random at the 
+beggining but ofter warmup for (i-n) steps the model weights 
+are ema'ed to the ema model.
