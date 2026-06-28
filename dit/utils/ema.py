@@ -50,6 +50,7 @@ class EMA:
             # 1st operation: ema_p.data * decay =  ema_p.data
             # 2nd operation: add ema_p.data with p.data * (1 - decay)
             # entire operation: ema_p.data = (ema_p.data * decay) + (p.data * (1-decay))
+            # In-place operations: In-place operations update a variable’s value directly in the same memory location, instead of creating a new object.
 
 
         # Buffers
