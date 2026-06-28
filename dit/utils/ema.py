@@ -28,7 +28,7 @@ class EMA:
         self.ema_model.eval()
 
         for p in self.ema_model.parameters():
-            p.requires_grad(False) 
+            p.requires_grad_(False) 
     
     @torch.no_grad()
     def update(self, model:nn.Module):
@@ -46,8 +46,12 @@ class EMA:
         decay = self.decay
 
         for ema_p, p in zip(self.ema_model.parameters(), model.parameters()):
-            ema_p.data.mul(decay).add_(p.data, alpha = 1 - decay)
-        
+            ema_p.data.mul_(decay).add_(p.data, alpha = 1 - decay)
+            # 1st operation: ema_p.data * decay =  ema_p.data
+            # 2nd operation: add ema_p.data with p.data * (1 - decay)
+            # entire operation: ema_p.data = (ema_p.data * decay) + (p.data * (1-decay))
+
+
         # Buffers
 
         # model.parameters() only gives you the learnable weights 
@@ -70,14 +74,19 @@ if __name__ == "__main__":
     sys.path.insert(0, ".")
     from dit.models.dit import  DIT
 
-    model = DIT(depth = 2)
+    model = DIT(n_blocks=2)
     ema = EMA(model, decay = 0.99, warmup_steps=5)
 
     # snapshot ema weights before any updates
-    initial_ema_weight = ema.ema_model.blocks[0].attn.qkv.weight.clone()
+    initial_ema_weight = ema.ema_model.dit_blocks[0].attn.qkv.weight.clone()
 
-    # for step in range(20):
-    #     with torch.no_grad():
-    #         for p in model.parameters():
+    for step in range(20):
+        with torch.no_grad():
+            for p in model.parameters():
+                p.add_(torch.randn_like(p) * 0.01) # simulating an optimizer step
 
+        ema.update(model)
 
+    final_ema_weight = ema.ema_model.dit_blocks[0].attn.qkv.weight.clone()
+
+    print("ema weight changed from initial:", not torch.allclose(initial_ema_weight, final_ema_weight))
